@@ -54,4 +54,8 @@
     <tagNameProcessTest/>
     <valueProcessTest>some value</valueProcessTest>
     <textordertest>this is text with <b>markup</b> in the middle</textordertest>
+    <passthroughtest>
+        Some text with <subitem attr='attr&amp;rt"ta'>i<b>t</b>e<i><b>m</b></i>s</subitem>.
+        <subitem>Next<br foo="bar"/>line</subitem>.
+    </passthroughtest>
 </sample>

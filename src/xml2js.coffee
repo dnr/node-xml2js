@@ -73,6 +73,7 @@ exports.defaults =
     attrNameProcessors: null
     tagNameProcessors: null
     valueProcessors: null
+    passthrough: null
     # xml building options
     rootName: 'root'
     xmldec: {'version': '1.0', 'encoding': 'UTF-8', 'standalone': true}
@@ -169,11 +170,21 @@ class exports.Parser extends events.EventEmitter
     @EXPLICIT_CHARKEY = @options.explicitCharkey
     @resultObject = null
     stack = []
+    ptstack = []
     # aliases, so we don't have to type so much
     attrkey = @options.attrkey
     charkey = @options.charkey
 
     @saxParser.onopentag = (node) =>
+      if ptstack.length > 0 or @options.passthrough and @options.passthrough node.name
+        attrString = ''
+        for own key, val of node.attributes
+          val = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').replace(/\t/g, '&#x9;').replace(/\n/g, '&#xA;').replace(/\r/g, '&#xD;')
+          attrString += " #{key}=\"#{val}\""
+        ontext "<#{node.name}#{attrString}#{if node.isSelfClosing then '/' else ''}>"
+        ptstack.push node
+        return
+
       obj = {}
       obj[charkey] = ""
       unless @options.ignoreAttrs
@@ -194,6 +205,11 @@ class exports.Parser extends events.EventEmitter
       stack.push obj
 
     @saxParser.onclosetag = =>
+      if ptstack.length > 0
+        node = ptstack.pop()
+        ontext "</#{node.name}>" unless node.isSelfClosing
+        return
+
       obj = stack.pop()
       nodeName = obj["#name"]
       delete obj["#name"] if not @options.explicitChildren or not @options.preserveChildrenOrder
@@ -278,7 +294,7 @@ class exports.Parser extends events.EventEmitter
       if s
         s[charkey] += text
 
-        if @options.explicitChildren and @options.preserveChildrenOrder and @options.charsAsChildren and text.replace(/\\n/g, '').trim() isnt ''
+        if ptstack.length == 0 and @options.explicitChildren and @options.preserveChildrenOrder and @options.charsAsChildren and text.replace(/\\n/g, '').trim() isnt ''
           s[@options.childkey] = s[@options.childkey] or []
           charChild =
             '#name': '__text__'

@@ -29,6 +29,8 @@ nameToUpperCase = (name) ->
 nameCutoff = (name) ->
   return name.substr(0, 4)
 
+isSubitem = (name) -> name.toLowerCase() == 'subitem'
+
 ###
 The `validator` function validates the value at the XPath. It also transforms the value
 if necessary to conform to the schema or other validation information being used. If there
@@ -533,3 +535,17 @@ module.exports =
     console.log 'Result object: ' + util.inspect r, false, 10
     equ r.hasOwnProperty('SAMP'), true
     equ r.SAMP.hasOwnProperty('TAGN'), true)
+
+  'test passthrough': skeleton(passthrough: isSubitem, (r) ->
+    console.log 'Result object: ' + util.inspect r, false, 10
+    equ r.sample.listtest[0].item.length, 3
+    equ r.sample.listtest[0].item[0], '\n            This <subitem>Foo(1)</subitem> is\n            <subitem>Foo(2)</subitem>\n            character\n            <subitem>Foo(3)</subitem>\n            data!\n            <subitem>Foo(4)</subitem>\n        '
+    equ r.sample.listtest[0].item[1], 'Qux.'
+    equ r.sample.listtest[0].item[2], 'Quux.'
+    equ r.sample.arraytest[0].item.length, 2
+    equ r.sample.arraytest[0].item[0], '<subitem>Baz.</subitem>'
+    equ r.sample.arraytest[0].item[1], '<subitem>Foo.</subitem><subitem>Bar.</subitem>')
+
+  'test passthrough with attributes': skeleton(passthrough: isSubitem, (r) ->
+    equ r.sample.passthroughtest[0].trim(), "Some text with <subitem attr=\"attr&amp;rt&quot;ta\">i<b>t</b>e<i><b>m</b></i>s</subitem>.\n        <subitem>Next<br foo=\"bar\"/>line</subitem>."
+   )
